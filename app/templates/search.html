@@ -1,0 +1,28 @@
+{% extends "base_navbar.html" %}
+{% block content %}
+<div class="d-flex justify-content-center">
+    <form action="" method="get">{% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" class="btn btn-primary" value="Search">
+    </form>
+</div>
+</br>
+{% if profiles %}
+{% for i in profiles %}
+<div class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
+    <div class="card-body">
+        <h1><a href="{% url 'profile' id=i.user.id%}">{{i.user.username}}</a></h1>
+        {% if Profile.avatar %}
+        <img src="{{Profile.avatar.url}}" width="350px">
+        {% endif %}
+        <h1>Bio:{{Profile.bio}}</h1>
+    </div>
+</div>
+
+{% endfor %}
+{% else %}
+<div class="d-flex justify-content-center">
+    No users matching query
+</div>
+{% endif %}
+{% endblock %}
