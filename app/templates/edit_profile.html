@@ -1,9 +1,16 @@
-{% extends "base_navbar.html" %}
+{% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-center">
-<form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{message.tags}} m-2" id='msg' role="alert">
+    {{ message }}
+    <a href="" class="del-msg">&times;</a>
+</div>
+{% endfor %}
+{% endif %}
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
     {{ form.as_p }}
     <input type="submit" class="btn btn-primary" value="Edit">
 </form>
-</div>
 {% endblock %}

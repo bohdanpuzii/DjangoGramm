@@ -31,3 +31,7 @@ class Like(models.Model):
 class Dislike(models.Model):
     who_disliked = models.ForeignKey(Profile, on_delete=models.CASCADE)
     post = models.ForeignKey(Photo, on_delete=models.CASCADE, default=None)
+
+
+class TestProfile(User):
+    bio = models.CharField(max_length=100)

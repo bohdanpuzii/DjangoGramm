@@ -23,37 +23,7 @@
 <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
 {% csrf_token %}
 {% load static %}
-<script type="text/javascript">
-$('.btn-success').click(function(){
-var id;
-id = $(this).attr("data-catid");
-$.ajax(
-{
-    type:"POST",
-    url: "/like/"+id,
-    data : {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value},
-    dataType : "json",
-success: function( data )
-{
-$('#like'+id+' span').html(data.likes_count)
-$('#unlike'+id+' span').html(data.dislikes_count)
-} }) });
-</script>
-<script type="text/javascript">
-$('.btn-danger').click(function(){
-var id;
-id = $(this).attr("data-catid");
-$.ajax(
-{
-    type:"POST",
-    url: "/unlike/"+id,
-    data : {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value},
-    dataType : "json",
-success: function( data )
-{
-$('#like'+id+' span').html(data.likes_count)
-$('#unlike'+id+' span').html(data.dislikes_count)
-} }) });
-</script>
+<script src="{% static 'likes.js' %}"></script>
+
 
 {% endblock %}

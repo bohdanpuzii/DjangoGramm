@@ -1,9 +1,7 @@
-{% extends "base_navbar.html"%}
+{% extends "base.html"%}
 {% block content %}
-<div class="d-flex justify-content-center">
 <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
     {{ form.as_p }}
     <input class="btn btn-primary" type="submit" value="Post">
 </form>
-    </div>
 {% endblock %}

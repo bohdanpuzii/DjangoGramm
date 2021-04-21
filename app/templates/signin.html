@@ -1,18 +1,26 @@
 {% extends "base.html"%}
 {% block content %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{message.tags}} m-2" id='msg' role="alert">
+    {{ message }}
+    <a href="" class="del-msg">&times;</a>
+</div>
+{% endfor %}
+{% endif %}
 <div class="d-flex justify-content-center">
-<form action="" method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <input class="btn btn-primary" type="submit" value="Sign In">
-</form>
+    <form action="" method="post">{% csrf_token %}
+        {{ form.as_p }}
+        <input class="btn btn-primary" type="submit" value="Sign In">
+    </form>
 </div>
 <div class="d-flex justify-content-center mh-100px">
-<h4><a href="{% url 'register' %}">Register</a></h4>
-    </div>
-<div class="d-flex justify-content-center mh-100px">
-<a href="{% url 'social:begin' 'google-oauth2' %}">Login with Google</a>
+    <h4><a href="{% url 'register' %}">Register</a></h4>
 </div>
 <div class="d-flex justify-content-center mh-100px">
-<a href="{% url 'social:begin' 'github' %}">Login with GitHub</a>
+    <a href="{% url 'social:begin' 'google-oauth2' %}">Login with Google</a>
+</div>
+<div class="d-flex justify-content-center mh-100px">
+    <a href="{% url 'social:begin' 'github' %}">Login with GitHub</a>
 </div>
 {% endblock %}

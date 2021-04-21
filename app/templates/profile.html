@@ -1,109 +1,58 @@
 {% extends "base_navbar.html" %}
 {% block content %}
 <div class="container">
-<div class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
-  <div class="card-body">
-    <h1>{{Profile.user.username}}</h1>
-      {% if Profile.avatar %}
-<img src="{{Profile.avatar.url}}" width="350px">
-{% endif %}
-<h1>Bio:{{Profile.bio}}</h1>
-  </div>
-</div>
-{% if able_to_follow %}
-    <div id="follow{{Profile.user.id}}" class ="d-flex justify-content-center">
+    <div class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
+        <div class="card-body">
+            <h1>{{Profile.user.username}}</h1>
+            {% if Profile.avatar %}
+            <img src="{{Profile.avatar.url}}" width="350px">
+            {% endif %}
+            <h1>Bio:{{Profile.bio}}</h1>
+        </div>
+    </div>
+    {% if  able_to_follow %}
+    <div id="follow{{Profile.user.id}}" class="d-flex justify-content-center">
         <button data-catid="{{Profile.user.id}}" class="btn btn-secondary" name="follow">
             <span>
                 {% if followed %}
-            Unfollow
+                    Unfollow
                 {% else %}
-                Follow
+                    Follow
                 {% endif %}
         </span>
         </button>
     </div>
-{% endif %}
-<div class="container" style="max-width:400px">
-<h1>{{Profile.user.username}}`s photos</h1><br>
+    {% endif %}
+    <div class="container" style="max-width:400px">
+        <h1>{{Profile.user.username}}`s photos</h1><br>
     </div>
-{% if Photo is not None %}
-{% for photo in Photo %}
-<div id="{{photo.id}}" class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
-    <div class="card-header"><a href="{% url 'profile' id=photo.profile.user.id %}" class="text-white bg-dark">
-        {{photo.profile.user.username}} </a>
-    </div>
-    <img class="card-img-top" src="{{photo.photo.url}}" alt="Card image cap">
-    <div class="card-body">
-        <h5 class="card-title">{{photo.text}}</h5>
-        <p class="card-text">{{photo.date}}</p>
-    </div>
-    <div id="like{{photo.id}}">
-        <button data-catid="{{photo.id}}" class="btn btn-success like-btn" name="like"> like</button>
-        <span>{{photo.likes}}</span>
-    </div>
+    {% if Photo is not None %}
+    {% for photo in Photo %}
+    <div id="{{photo.id}}" class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
+        <div class="card-header"><a href="{% url 'profile' id=photo.profile.user.id %}" class="text-white bg-dark">
+            {{photo.profile.user.username}} </a>
+        </div>
+        <img class="card-img-top" src="{{photo.photo.url}}" alt="Card image cap">
+        <div class="card-body">
+            <h5 class="card-title">{{photo.text}}</h5>
+            <p class="card-text">{{photo.date}}</p>
+        </div>
+        <div id="like{{photo.id}}">
+            <button data-catid="{{photo.id}}" class="btn btn-success like-btn" name="like"> like</button>
+            <span>{{photo.likes}}</span>
+        </div>
         <div id="unlike{{photo.id}}">
-        <button data-catid="{{photo.id}}" class="btn btn-danger dislike-btn " name="unlike"> unlike</button>
-        <span>{{photo.unlikes}}</span>
+            <button data-catid="{{photo.id}}" class="btn btn-danger dislike-btn " name="unlike"> unlike</button>
+            <span>{{photo.unlikes}}</span>
+        </div>
     </div>
 </div>
-    </div>
 {% endfor %}
 {% endif %}
-<script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+        crossorigin="anonymous"></script>
 {% csrf_token %}
 {% load static %}
-<script type="text/javascript">
-$('.btn-secondary').click(function(){
-var id;
-id = $(this).attr("data-catid");
-console.log(id)
-$.ajax(
-{
-    type:"POST",
-    url: "/follow/"+id,
-    data : {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value},
-    dataType : "json",
-success: function( data )
-{
-if (data.followed){
-$('#follow'+id+' span').html('Unfollow')
-}
-else{
-$('#follow'+id+' span').html('Follow')
-}
-
-} }) });
-</script>
-<script type="text/javascript">
-$('.btn-success').click(function(){
-var id;
-id = $(this).attr("data-catid");
-$.ajax(
-{
-    type:"POST",
-    url: "/like/"+id,
-    data : {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value},
-    dataType : "json",
-success: function( data )
-{
-$('#like'+id+' span').html(data.likes_count)
-$('#unlike'+id+' span').html(data.dislikes_count)
-} }) });
-</script>
-<script type="text/javascript">
-$('.btn-danger').click(function(){
-var id;
-id = $(this).attr("data-catid");
-$.ajax(
-{
-    type:"POST",
-    url: "/unlike/"+id,
-    data : {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value},
-    dataType : "json",
-success: function( data )
-{
-$('#like'+id+' span').html(data.likes_count)
-$('#unlike'+id+' span').html(data.dislikes_count)
-} }) });
-</script>
+<script src="{% static 'follow.js' %}"></script>
+<script src="{% static 'likes.js' %}"></script>
 {% endblock %}

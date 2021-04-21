@@ -1,15 +1,99 @@
-import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import RegisterForm, LoginByUsernameForm, EditProfile, PostPhoto, SearchForm
+from .forms import RegisterForm, SignInForm, PostPhotoForm, EditProfileForm
 from .models import Profile, Photo, Subscriber, Like, Dislike
-from django.http import HttpResponse
+from django.urls import reverse
+from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, get_user, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, get_user, logout
+from django.views.generic.edit import FormView, View
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-LOGIN_URL = '/signin/'
+
+class Registration(FormView):
+    template_name = 'registration.html'
+    form_class = RegisterForm
+
+    def form_valid(self, form):
+        user = form.save()
+        if user is not None:
+            login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect(reverse('edit_profile'))
+        else:
+            messages.warning(self.request, 'This username is already used')
+            return redirect(reverse('register'))
+
+
+class SignIn(FormView):
+    template_name = 'signin.html'
+    form_class = SignInForm
+
+    def form_valid(self, form):
+        user = form.save()
+        if user is not None:
+            login(self.request, user)
+            return redirect(reverse('profile', args=[self.request.user.id]))
+        else:
+            messages.warning(self.request, 'Incorrect password or login')
+            return redirect(reverse('signin'))
+
+
+class EditProfile(FormView):
+    template_name = 'edit_profile.html'
+    form_class = EditProfileForm
+
+    def get_initial(self):
+        user_profile = Profile.objects.get(user=self.request.user)
+        profile_data = {'username': self.request.user.username, 'bio': user_profile.bio, 'avatar': user_profile.avatar}
+        return profile_data
+
+    def form_valid(self, form):
+        form.fields['profile'] = Profile.objects.get(user=self.request.user)
+        if form.save():
+            return redirect(reverse('profile', args=[self.request.user.id]))
+        else:
+            messages.warning(self.request, 'Username is already used')
+            return redirect(reverse('edit_profile'))
+
+
+class UserProfile(View):
+    def get(self, request, user_id):
+        current_user_profile = Profile.objects.get(user=request.user)
+        user = get_object_or_404(User, id=user_id)
+        user_profile = Profile.objects.get(user=user)
+        context = {'Profile': user_profile, 'user_id': request.user.id,
+                   'Photo': Photo.objects.filter(profile=user_profile).order_by('-date'),
+                   'followed': True if Subscriber.objects.filter(follower=current_user_profile,
+                                                                 profile=user_profile) else False,
+                   'able_to_follow': False if current_user_profile == user_profile else True}
+        return render(request, 'profile.html', context=context)
+
+
+def feed(request):
+    if Profile.objects.filter(user=request.user):
+        current_profile = Profile.objects.get(user=request.user)
+    else:
+        current_profile = Profile(user=request.user)
+        current_profile.save()
+        request.user.save()
+    subscribers = Subscriber.objects.filter(follower=current_profile).values('profile')
+    context = {'Photos': Photo.objects.filter(profile__in=subscribers).order_by('date')}
+    return render(request, 'feed.html', context=context)
+
+
+class Logout(View):
+    def get(self, request):
+        logout(request)
+        return redirect(reverse('signin'))
+
+
+class PostPhoto(FormView):
+    template_name = 'post_photo.html'
+    form_class = PostPhotoForm
+
+    def form_valid(self, form):
+        form.fields['profile'] = Profile.objects.get(user=self.request.user)
+        return redirect(reverse('profile', args=[self.request.user.id]))
 
 
 class FollowAPI(APIView):
@@ -17,8 +101,7 @@ class FollowAPI(APIView):
         followed = True
         user = User.objects.get(id=who_to_follow_id)
         profile = Profile.objects.get(user=user)
-        current_user = User.objects.get(id=request.user.id)
-        current_profile = Profile.objects.get(user=current_user)
+        current_profile = Profile.objects.get(user=request.user)
         if Subscriber.objects.filter(follower=current_profile, profile=profile):
             subscribe_to_delete = Subscriber.objects.get(follower=current_profile, profile=profile)
             subscribe_to_delete.delete()
@@ -26,7 +109,7 @@ class FollowAPI(APIView):
         else:
             new_subscribe = Subscriber(follower=current_profile, profile=profile)
             new_subscribe.save()
-        return Response({"followed": followed}, status=200)
+        return Response({"followed": followed}, status=201)
 
 
 class LikeAPI(APIView):
@@ -44,7 +127,7 @@ class LikeAPI(APIView):
             like.save()
             post.likes += 1
             post.save()
-        return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=200)
+        return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=201)
 
 
 class DislikeAPI(APIView):
@@ -62,134 +145,4 @@ class DislikeAPI(APIView):
             dislike.save()
             post.unlikes += 1
             post.save()
-        return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=200)
-
-
-def register(request):
-    if request.method == 'POST':
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            email = form.cleaned_data['email']
-            psw = form.cleaned_data['psw']
-            new_user = User(username=username, password=psw, email=email)
-            new_user.set_password(form.cleaned_data['psw'])
-            new_user.save()
-            user = authenticate(request, username=username, password=psw)
-            new_profile = Profile(user=user)
-            new_profile.save()
-            login(request, user)
-            return redirect(edit_profile)
-    else:
-        form = RegisterForm()
-    return render(request, "registration.html", {'form': RegisterForm})
-
-
-def sign_in(request):
-    if request.method == 'POST':
-        form = LoginByUsernameForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            psw = form.cleaned_data['psw']
-            user = authenticate(request, username=username, password=psw)
-            if user is not None:
-                login(request, user)
-                return redirect(profile, id=user.id)
-            else:
-                return HttpResponse('Incorrect')
-    else:
-        form = LoginByUsernameForm()
-    return render(request, "signin.html", {'form': LoginByUsernameForm})
-
-
-@login_required(login_url=LOGIN_URL)
-def profile(request, id):
-    user = get_object_or_404(User, id=id)
-    user_profile = Profile.objects.get(user=user)
-    currents_user = User.objects.get(id=request.user.id)
-    currents_user_profile = Profile.objects.get(user=currents_user)
-    context = {'Profile': user_profile, 'user_id': request.user.id}
-    if Photo.objects.filter(profile=Profile.objects.get(user=user)):
-        context['Photo'] = Photo.objects.filter(profile=user_profile).order_by('-date')
-    else:
-        context['Photo'] = None
-    if Subscriber.objects.filter(follower=currents_user_profile, profile=user_profile):
-        context['followed'] = True
-    else:
-        context['followed'] = False
-    if currents_user != user:
-        context['able_to_follow'] = True
-    else:
-        context['able_to_follow'] = False
-    return render(request, 'profile.html', context=context)
-
-
-@login_required(login_url=LOGIN_URL)
-def edit_profile(request):
-    user = User.objects.get(id=request.user.id)
-    user_profile = Profile.objects.get(user=user)
-    if request.method == 'POST':
-        form = EditProfile(request.POST, request.FILES)
-        if form.is_valid():
-            if form.cleaned_data['username']:
-                user.username = form.cleaned_data['username']
-            if form.cleaned_data['bio']:
-                user_profile.bio = form.cleaned_data['bio']
-            if form.cleaned_data['avatar']:
-                user_profile.avatar = form.cleaned_data['avatar']
-            user.save()
-            user_profile.save()
-            return redirect(profile, id=user.id)
-    else:
-        form = EditProfile()
-    return render(request, "edit_profile.html", {'form': EditProfile})
-
-
-@login_required(login_url=LOGIN_URL)
-def feed(request):
-    if Profile.objects.filter(user=request.user):
-        current_profile = Profile.objects.get(user=request.user)
-    else:
-        current_profile = Profile(user=request.user)
-        current_profile.save()
-        request.user.save()
-    subscribers = Subscriber.objects.filter(follower=current_profile).values('profile')
-    context = {'Photos': Photo.objects.filter(profile__in=subscribers).order_by('date')}
-    return render(request, 'feed.html', context=context)
-
-
-def logout_user(request):
-    logout(request)
-    return redirect(sign_in)
-
-
-@login_required(login_url=LOGIN_URL)
-def postphoto(request):
-    user = get_user(request)
-    current_profile = Profile.objects.get(user=user)
-    text = ''
-    if request.method == 'POST':
-        form = PostPhoto(request.POST, request.FILES)
-        if form.is_valid():
-            if form.cleaned_data['photo']:
-                photo = form.cleaned_data['photo']
-                if form.cleaned_data['text']:
-                    text = form.cleaned_data['text']
-                new_post = Photo(photo=photo, text=text, profile=current_profile, date=datetime.datetime.now())
-                new_post.save()
-                return redirect(profile, id=user.id)
-    else:
-        form = PostPhoto()
-    return render(request, 'post_photo.html', {'form': PostPhoto})
-
-
-@login_required(login_url=LOGIN_URL)
-def search(request):
-    context = {'form': SearchForm}
-    if request.method == 'GET':
-        form = SearchForm(request.GET)
-        if form.is_valid():
-            searched_user = form.cleaned_data['searched_user']
-            result_query = Profile.objects.filter(user__in=User.objects.filter(username__startswith=searched_user))
-            context['profiles'] = result_query
-    return render(request, 'search.html', context=context)
+        return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=201)

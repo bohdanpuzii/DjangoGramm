@@ -1,7 +1,6 @@
 $('.btn-secondary').click(function(){
 var id;
 id = $(this).attr("data-catid");
-console.log(id)
 $.ajax(
 {
     type:"POST",

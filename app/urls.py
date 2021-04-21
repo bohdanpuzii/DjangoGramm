@@ -1,17 +1,17 @@
 from django.urls import path, include
+from django.contrib.auth.decorators import login_required
 from . import views
 
 urlpatterns = [
-    path('', views.register, name='register'),
-    path('signin/', views.sign_in, name='signin'),
-    path('edit_profile/', views.edit_profile, name='editprofile'),
-    path('profile/<int:id>', views.profile, name='profile'),
-    path('logout', views.logout_user, name='logout'),
-    path('post_photo/', views.postphoto, name='postphoto'),
+    path('', views.Registration.as_view(), name='register'),
+    path('sign_in/', views.SignIn.as_view(), name='signin'),
+    path('edit_profile/', login_required(views.EditProfile.as_view()), name='edit_profile'),
+    path('profile/<int:user_id>', login_required(views.UserProfile.as_view()), name='profile'),
+    path('logout', login_required(views.Logout.as_view()), name='logout'),
+    path('post_photo/', login_required(views.PostPhoto.as_view()), name='postphoto'),
     path('feed/', views.feed, name='feed'),
     path('like/<int:post_id>', views.LikeAPI.as_view(), name='like'),
     path('unlike/<int:post_id>', views.DislikeAPI.as_view(), name='unlike'),
     path('follow/<int:who_to_follow_id>', views.FollowAPI.as_view(), name='follow'),
     path('oauth/', include('social_django.urls', namespace='social')),
-    path('search/', views.search, name='search')
 ]

@@ -88,7 +88,7 @@ DB_USER = os.getenv('DB_USER')
 DB_PORT = os.getenv('DB_PORT')
 
 # use this db for deploy
-DATABASES = {'default': {
+'''DATABASES = {'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': DB_NAME,
     'USER': DB_USER,
@@ -96,10 +96,10 @@ DATABASES = {'default': {
     'HOST': DB_HOST,
     'PASSWORD': DB_PASS
 }
-}
+}'''
 
 # use this db for localhost and running tests
-'''DATABASES = {'default': {
+DATABASES = {'default': {
     'ENGINE': 'django.db.backends.postgresql',
     'NAME': 'djangogramm',
     'USER': 'postgres',
@@ -107,7 +107,7 @@ DATABASES = {'default': {
     'HOST': 'localhost',
     'PASSWORD': 'mirinda123'
 }
-}'''
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -151,7 +151,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "app/static"),
+    os.path.join(BASE_DIR, "static"),
 )
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
@@ -169,18 +169,12 @@ cloudinary.config(
 )
 
 SOCIAL_AUTH_POSTGRES_JSONFIELD = True
-
-LOGIN_URL = '/signin'
+LOGIN_URL = '/sign_in'
 LOGOUT_URL = '/logout'
 LOGIN_REDIRECT_URL = '/feed'
 
-SOCIAL_AUTH_GOOGLE = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-SOCIAL_AUTH_GITHUB = os.getenv('SOCIAL_AUTH_GITHUB_KEY')
-SOCIAL_AUTH_GITHUB__SECRET = os.getenv('SOCIAL_AUTH_GITHUB_SECRET')
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '225024915875-iimb0er7vlrd4argm48jnoinh1l64015.apps.googleusercontent.com'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '2-i-sQbYT0ZYdkh4km38IYgS'
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = SOCIAL_AUTH_GOOGLE
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = SOCIAL_AUTH_GOOGLE_SECRET
-
-SOCIAL_AUTH_GITHUB_KEY = SOCIAL_AUTH_GITHUB
-SOCIAL_AUTH_GITHUB_SECRET = SOCIAL_AUTH_GITHUB__SECRET
+SOCIAL_AUTH_GITHUB_KEY = '63e8751879284ea92949'
+SOCIAL_AUTH_GITHUB_SECRET = 'de1517e4104541f491e391b85642a3cdb94879fb'
