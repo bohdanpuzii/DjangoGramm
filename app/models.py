@@ -15,19 +15,22 @@ class Photo(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, default=None)
     likes = models.IntegerField(default=0)
     unlikes = models.IntegerField(default=0)
+    objects = None
 
 
 class Subscriber(models.Model):
     follower = models.ForeignKey(Profile, on_delete=models.CASCADE)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='profile_to_be_subscribed')
+    objects = None
 
 
 class Like(models.Model):
     who_liked = models.ForeignKey(Profile, on_delete=models.CASCADE)
     post = models.ForeignKey(Photo, on_delete=models.CASCADE, default=None)
+    objects = None
 
 
 class Dislike(models.Model):
     who_disliked = models.ForeignKey(Profile, on_delete=models.CASCADE)
     post = models.ForeignKey(Photo, on_delete=models.CASCADE, default=None)
-
+    objects = None

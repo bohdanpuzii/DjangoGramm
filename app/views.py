@@ -1,26 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import RegisterForm, SignInForm, PostPhotoForm, EditProfileForm
-from .models import Profile, Photo, Subscriber, Like, Dislike
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.views.generic.edit import FormView, View
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .forms import RegisterForm, SignInForm, PostPhotoForm, EditProfileForm
+from .models import Profile, Photo, Subscriber, Like, Dislike
 
 
 class Registration(FormView):
     template_name = 'registration.html'
     form_class = RegisterForm
+    success_url = reverse_lazy('edit_profile')
 
     def form_valid(self, form):
         profile = form.save()
-        if profile is not None:
-            login(self.request, profile, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect(reverse('edit_profile'))
-        else:
-            messages.warning(self.request, 'This username is already used')
-            return redirect(reverse('register'))
+        login(self.request, profile,
+              backend='django.contrib.auth.backends.ModelBackend') if profile is not None else messages.warning(
+            self.request, 'This username is already used')
+        return super().form_valid(form)
 
 
 class SignIn(FormView):
@@ -29,12 +28,13 @@ class SignIn(FormView):
 
     def form_valid(self, form):
         user = form.save()
-        if user is not None:
-            login(self.request, user)
-            return redirect(reverse('profile', args=[self.request.user.id]))
-        else:
-            messages.warning(self.request, 'Incorrect password or login')
-            return redirect(reverse('signin'))
+        login(self.request, user) if user is not None else messages.warning(self.request,
+                                                                            'Incorrect password or login')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        profile = self.request.user
+        return reverse('profile', args=[profile.id]) if profile.is_authenticated else reverse('signin')
 
 
 class EditProfile(FormView):
@@ -50,11 +50,13 @@ class EditProfile(FormView):
     def form_valid(self, form):
         profile = self.request.user
         form.fields['profile'] = profile
-        if form.save():
-            return redirect(reverse('profile', args=[profile.id]))
-        else:
+        if not form.save():
             messages.warning(self.request, 'Username is already used')
-            return redirect(reverse('edit_profile'))
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        profile_id = self.request.user.id
+        return reverse('profile', args=[profile_id])
 
 
 class UserProfile(View):
@@ -63,9 +65,9 @@ class UserProfile(View):
         page_profile = get_object_or_404(Profile, id=profile_id)
         context = {'Profile': page_profile, 'user_id': request.user.id,
                    'Photo': Photo.objects.filter(profile=page_profile).order_by('-date'),
-                   'followed': True if Subscriber.objects.filter(follower=current_profile,
-                                                                 profile=page_profile) else False,
-                   'able_to_follow': False if current_profile == page_profile else True}
+                   'followed': bool(Subscriber.objects.filter(follower=current_profile,
+                                                              profile=page_profile)),
+                   'able_to_follow': not current_profile == page_profile}
         return render(request, 'profile.html', context=context)
 
 
@@ -92,6 +94,10 @@ class PostPhoto(FormView):
         form.save()
         return redirect(reverse('profile', args=[self.request.user.id]))
 
+    def get_success_url(self):
+        profile_id = self.request.user.id
+        return reverse('profile', args=[profile_id])
+
 
 class FollowAPI(APIView):
     def post(self, request, who_to_follow_id):
@@ -112,8 +118,9 @@ class LikeAPI(APIView):
     def post(self, request, post_id):
         current_profile = request.user
         post = Photo.objects.get(id=post_id)
-        if not Like.objects.filter(who_liked=current_profile, post=post) and Dislike.objects.filter(
-                who_disliked=current_profile, post=post):
+        like_exists = Like.objects.filter(who_liked=current_profile, post=post)
+        dislike_exists = Dislike.objects.filter(who_disliked=current_profile, post=post)
+        if not like_exists and dislike_exists:
             delete_dislike(current_profile, post)
         create_like(current_profile, post)
         return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=201)
@@ -137,10 +144,11 @@ class DislikeAPI(APIView):
     def post(self, request, post_id):
         current_profile = request.user
         post = Photo.objects.get(id=post_id)
-        if not Dislike.objects.filter(who_disliked=current_profile, post=post):
-            if Like.objects.filter(who_liked=current_profile, post=post):
-                delete_like(current_profile, post)
-            create_dislike(current_profile, post)
+        dislike_exists = Dislike.objects.filter(who_disliked=current_profile, post=post)
+        like_exists = Like.objects.filter(who_liked=current_profile, post=post)
+        if not dislike_exists and like_exists:
+            delete_like(current_profile, post)
+        create_dislike(current_profile, post)
         return Response({"likes_count": post.likes, "dislikes_count": post.unlikes}, status=201)
 
 
