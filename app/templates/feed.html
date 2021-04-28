@@ -2,8 +2,8 @@
 {% block content %}
 {% for photo in Photos %}
 <div id="{{photo.id}}" class="card text-white bg-secondary mb-3 container" style="max-width: 400px;">
-    <div class="card-header"><a href="{% url 'profile' id=photo.profile.user.id %}" class="text-white bg-dark">
-        {{photo.profile.user.username}} </a>
+    <div class="card-header"><a href="{% url 'profile' profile_id=photo.profile.id %}" class="text-white bg-dark">
+        {{photo.profile.username}} </a>
     </div>
     <img class="card-img-top" src="{{photo.photo.url}}" alt="Card image cap">
     <div class="card-body">

@@ -16,7 +16,7 @@
   <div class="collapse navbar-collapse" id="navbarNav">
     <ul class="navbar-nav">
                   <li class="nav-item">
-        <a class="nav-link" href="{% url 'profile' user_id=request.user.id %}">My profile</a>
+        <a class="nav-link" href="{% url 'profile' profile_id=request.user.id %}">My profile</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{% url 'feed' %}">Feed </a>

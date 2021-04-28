@@ -1,10 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
 
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+class Profile(AbstractUser):
     avatar = CloudinaryField('avatar')
     bio = models.CharField(max_length=100)
 
@@ -32,6 +31,3 @@ class Dislike(models.Model):
     who_disliked = models.ForeignKey(Profile, on_delete=models.CASCADE)
     post = models.ForeignKey(Photo, on_delete=models.CASCADE, default=None)
 
-
-class TestProfile(User):
-    bio = models.CharField(max_length=100)

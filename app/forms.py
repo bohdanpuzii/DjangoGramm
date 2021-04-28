@@ -1,29 +1,25 @@
 import datetime
 from django import forms
 from django.contrib.auth import authenticate
-from .models import User, Profile, Photo
+from .models import Profile, Photo
 
 
-def create_user_and_profile(username, email, password):
-    new_user = User(username=username, email=email)
-    new_user.set_password(password)
-    new_user.save()
-    new_profile = Profile(user=new_user)
+def create_profile(username, email, password):
+    new_profile = Profile(username=username, email=email)
+    new_profile.set_password(password)
     new_profile.save()
-    return new_user
+    return new_profile
 
 
 def edit_profile_data(profile, new_username, new_bio, new_avatar):
     profile.bio = new_bio
     profile.avatar = new_avatar
-    if not User.objects.filter(username=new_username) or profile.user.username == new_username:
-        profile.user.username = new_username
-        profile.user.save()
+    if not Profile.objects.filter(username=new_username) or profile.username == new_username:
+        profile.username = new_username
         profile.save()
         return True
     else:
         profile.save()
-        profile.user.save()
         return False
 
 
@@ -42,7 +38,7 @@ class RegisterForm(forms.Form):
         email = self.cleaned_data['email']
         username = self.cleaned_data['username']
         password = self.cleaned_data['password']
-        return create_user_and_profile(username, email, password) if not User.objects.filter(
+        return create_profile(username, email, password) if not Profile.objects.filter(
             username=username) else None
 
 
@@ -79,3 +75,4 @@ class PostPhotoForm(forms.Form):
         text = self.cleaned_data['text']
         photo = self.cleaned_data['photo']
         create_photo(profile, text, photo)
+        return
