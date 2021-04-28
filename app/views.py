@@ -62,12 +62,12 @@ class EditProfile(FormView):
 class UserProfile(View):
     def get(self, request, profile_id):
         current_profile = request.user
-        page_profile = get_object_or_404(Profile, id=profile_id)
-        context = {'Profile': page_profile, 'user_id': request.user.id,
-                   'Photo': Photo.objects.filter(profile=page_profile).order_by('-date'),
+        visited_profile = get_object_or_404(Profile, id=profile_id)
+        context = {'Profile': visited_profile, 'user_id': request.user.id,
+                   'Photo': Photo.objects.filter(profile=visited_profile).order_by('-date'),
                    'followed': bool(Subscriber.objects.filter(follower=current_profile,
-                                                              profile=page_profile)),
-                   'able_to_follow': not current_profile == page_profile}
+                                                              profile=visited_profile)),
+                   'able_to_follow': not current_profile == visited_profile}
         return render(request, 'profile.html', context=context)
 
 
@@ -101,17 +101,25 @@ class PostPhoto(FormView):
 
 class FollowAPI(APIView):
     def post(self, request, who_to_follow_id):
-        followed = True
-        profile = Profile.objects.get(id=who_to_follow_id)
+        followed_profile = Profile.objects.get(id=who_to_follow_id)
         current_profile = request.user
-        if Subscriber.objects.filter(follower=current_profile, profile=profile):
-            subscribe_to_delete = Subscriber.objects.get(follower=current_profile, profile=profile)
-            subscribe_to_delete.delete()
-            followed = False
-        else:
-            new_subscribe = Subscriber(follower=current_profile, profile=profile)
-            new_subscribe.save()
+        subscription_exists = Subscriber.objects.filter(follower=current_profile, profile=followed_profile)
+        followed = delete_subscription(current_profile,
+                                       followed_profile) if subscription_exists else create_subscription(
+            current_profile, followed_profile)
         return Response({"followed": followed}, status=201)
+
+
+def delete_subscription(current_profile, followed_profile):
+    subscribe_to_delete = Subscriber.objects.get(follower=current_profile, profile=followed_profile)
+    subscribe_to_delete.delete()
+    return False
+
+
+def create_subscription(current_profile, followed_profile):
+    new_subscribe = Subscriber(follower=current_profile, profile=followed_profile)
+    new_subscribe.save()
+    return True
 
 
 class LikeAPI(APIView):
