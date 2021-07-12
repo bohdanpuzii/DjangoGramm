@@ -172,3 +172,11 @@ def create_dislike(profile, post):
     dislike.save()
     post.unlikes += 1
     post.save()
+
+
+class Search(View):
+    def get(self, searched_string):
+        searched_string = self.request.GET.get("searched_string")
+        context = {'Profiles': Profile.objects.filter(username__contains=searched_string),
+                   'Photos': Photo.objects.filter(text__contains=searched_string)}
+        return render(self.request, 'search.html', context)

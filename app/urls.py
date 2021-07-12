@@ -14,4 +14,5 @@ urlpatterns = [
     path('unlike/<int:post_id>', views.DislikeAPI.as_view(), name='unlike'),
     path('follow/<int:who_to_follow_id>', views.FollowAPI.as_view(), name='follow'),
     path('oauth/', include('social_django.urls', namespace='social')),
+    path('search/', views.Search.as_view(), name='search')
 ]
